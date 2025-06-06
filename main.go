@@ -14,7 +14,6 @@ func extractSubdomains(subs []string, minLabels int, filtered []string) map[stri
 		filterSet[f] = struct{}{}
 	}
 
-	// Clean subdomains by removing filtered labels
 	cleanedSubs := make([][]string, 0, len(subs))
 	for _, sub := range subs {
 		labels := strings.Split(sub, ".")
@@ -27,22 +26,16 @@ func extractSubdomains(subs []string, minLabels int, filtered []string) map[stri
 		cleanedSubs = append(cleanedSubs, cleaned)
 	}
 
-	// Count immediate subdomain hits: For each cleaned subdomain,
-	// generate its parent domain by removing the leftmost label,
-	// and increment count for that parent if it exists.
 	domainCounts := make(map[string]int)
 	for _, labels := range cleanedSubs {
 		if len(labels) < 2 {
-			continue // no parent domain possible
+			continue
 		}
-		// Parent domain is labels[1:] (one level up)
+
 		parent := strings.Join(labels[1:], ".")
-		// Only count if the subdomain is strictly deeper (len(labels) > len(parent labels))
-		// which is always true here as we remove one label
 		domainCounts[parent]++
 	}
 
-	// Filter domains that meet minLabels in both label count and hit count
 	result := make(map[string]struct{})
 	for domain, count := range domainCounts {
 		if count >= minLabels && len(strings.Split(domain, ".")) >= minLabels {
@@ -90,9 +83,9 @@ func writeOutput(subs map[string]struct{}, outputPath string) error {
 
 func main() {
 	inputPath := flag.String("i", "", "Input file path")
-	outputPath := flag.String("o", "", "Output file path (optional)")
-	minLabels := flag.Int("min", 1, "Minimum number of labels required in subdomain (default: 1)")
-	filterStr := flag.String("fs", "balls", "Comma-separated subdomain labels to ignore in count (e.g. 'www,dev')")
+	outputPath := flag.String("o", "", "Output file path")
+	minLabels := flag.Int("min", 1, "Minimum number of labels required in subdomain")
+	filterStr := flag.String("fs", "", "Comma-separated subdomain labels to ignore in count (e.g. 'www,dev')")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [-i input_path] [-o output_file] [-min N] [-fs labels]\n", os.Args[0])
